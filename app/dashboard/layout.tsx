@@ -14,8 +14,9 @@ import {
     SidebarProvider,
     SidebarTrigger
 } from "@/components/ui/sidebar";
-import { User, LayoutDashboard, LogOut } from "lucide-react";
+import { User, Users, LayoutDashboard, LogOut } from "lucide-react";
 import { SignOutButton } from "./sign-out-button"; // Separate client component for sign out
+import { ModeToggle } from "@/components/theme-toggle";
 
 export default async function DashboardLayout({
     children,
@@ -50,7 +51,7 @@ export default async function DashboardLayout({
                                     <SidebarMenuItem>
                                         <SidebarMenuButton asChild>
                                             <Link href="/dashboard/users">
-                                                <User />
+                                                <Users />
                                                 <span>User Management</span>
                                             </Link>
                                         </SidebarMenuButton>
@@ -61,6 +62,14 @@ export default async function DashboardLayout({
                         <SidebarGroup className="mt-auto">
                             <SidebarGroupContent>
                                 <SidebarMenu>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild>
+                                            <Link href="/dashboard/profile">
+                                                <User />
+                                                <span>Profile</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
                                     <SidebarMenuItem>
                                         <SignOutButton />
                                     </SidebarMenuItem>
@@ -73,6 +82,9 @@ export default async function DashboardLayout({
                     <div className="p-4 flex items-center border-b">
                         <SidebarTrigger />
                         <div className="ml-4 font-semibold">Dashboard</div>
+                        <div className="ml-auto">
+                            <ModeToggle />
+                        </div>
                     </div>
                     <div className="p-4">
                         {children}
