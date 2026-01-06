@@ -48,6 +48,8 @@ export default function MessageAccountsPage() {
     const [loading, setLoading] = useState(true);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isTestOpen, setIsTestOpen] = useState(false);
+    const [source, setSource] = useState<"longbridge" | "yahoo">("longbridge");
+
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
     const [testSymbol, setTestSymbol] = useState("700.HK");
     const [testResult, setTestResult] = useState<string | null>(null);
@@ -118,18 +120,26 @@ export default function MessageAccountsPage() {
     };
 
     const runTestQuote = async () => {
-        if (!selectedAccount) return;
+        // If Longbridge, require account. If Yahoo, don't.
+        if (source === "longbridge" && !selectedAccount) return;
+
         setTesting(true);
         setTestResult(null);
         try {
+            const body: any = {
+                type: "message", // Default context
+                symbol: testSymbol,
+                source
+            };
+
+            if (source === "longbridge" && selectedAccount) {
+                body.accountId = selectedAccount.id;
+            }
+
             const res = await fetch("/api/test-quote", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    accountId: selectedAccount.id,
-                    type: "message",
-                    symbol: testSymbol
-                }),
+                body: JSON.stringify(body),
             });
             const data = await res.json();
             setTestResult(JSON.stringify(data, null, 2));
@@ -138,6 +148,13 @@ export default function MessageAccountsPage() {
         } finally {
             setTesting(false);
         }
+    };
+
+    const openTestDialog = (account: Account | null = null) => {
+        setSelectedAccount(account);
+        setSource(account ? "longbridge" : "yahoo");
+        setIsTestOpen(true);
+        setTestResult(null);
     };
 
     if (loading) return <div className="p-6"><Skeleton className="h-[200px] w-full" /></div>;
@@ -151,34 +168,39 @@ export default function MessageAccountsPage() {
                     </h2>
                     <p className="text-muted-foreground">Manage Longbridge message API accounts.</p>
                 </div>
-                <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="bg-blue-600 hover:bg-blue-700"><Plus className="mr-2 h-4 w-4" /> Add Account</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Add Message Account</DialogTitle>
-                            <DialogDescription>Enter your Longbridge API credentials.</DialogDescription>
-                        </DialogHeader>
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                <FormField control={form.control} name="name" render={({ field }) => (
-                                    <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={form.control} name="appKey" render={({ field }) => (
-                                    <FormItem><FormLabel>App Key</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={form.control} name="appSecret" render={({ field }) => (
-                                    <FormItem><FormLabel>App Secret</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={form.control} name="accessToken" render={({ field }) => (
-                                    <FormItem><FormLabel>Access Token</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <Button type="submit" className="w-full">Save Account</Button>
-                            </form>
-                        </Form>
-                    </DialogContent>
-                </Dialog>
+                <div className="flex space-x-2">
+                    <Button variant="outline" onClick={() => openTestDialog(null)}>
+                        <Activity className="mr-2 h-4 w-4" /> Test Quote
+                    </Button>
+                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="bg-blue-600 hover:bg-blue-700"><Plus className="mr-2 h-4 w-4" /> Add Account</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Add Message Account</DialogTitle>
+                                <DialogDescription>Enter your Longbridge API credentials.</DialogDescription>
+                            </DialogHeader>
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                    <FormField control={form.control} name="name" render={({ field }) => (
+                                        <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="appKey" render={({ field }) => (
+                                        <FormItem><FormLabel>App Key</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="appSecret" render={({ field }) => (
+                                        <FormItem><FormLabel>App Secret</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="accessToken" render={({ field }) => (
+                                        <FormItem><FormLabel>Access Token</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                    <Button type="submit" className="w-full">Save Account</Button>
+                                </form>
+                            </Form>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -190,7 +212,7 @@ export default function MessageAccountsPage() {
                                 <p className="text-xs text-muted-foreground font-mono mt-1">{account.appKey.substring(0, 8)}...</p>
                             </div>
                             <div className="flex space-x-2">
-                                <Button variant="ghost" size="icon" onClick={() => { setSelectedAccount(account); setIsTestOpen(true); }}>
+                                <Button variant="ghost" size="icon" onClick={() => openTestDialog(account)}>
                                     <Activity className="h-4 w-4 text-green-500" />
                                 </Button>
                                 <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => handleDelete(account.id)}>
@@ -214,13 +236,48 @@ export default function MessageAccountsPage() {
             <Dialog open={isTestOpen} onOpenChange={setIsTestOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>Test Connection: {selectedAccount?.name}</DialogTitle>
-                        <DialogDescription>Fetch a real-time quote to verify credentials.</DialogDescription>
+                        <DialogTitle>Test Quote</DialogTitle>
+                        <DialogDescription>Fetch real-time data from Longbridge or Yahoo Finance.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
+                        <div className="flex flex-col space-y-2">
+                            <Label>Source</Label>
+                            <div className="flex space-x-4">
+                                <label className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="source"
+                                        value="longbridge"
+                                        checked={source === "longbridge"}
+                                        onChange={() => setSource("longbridge")}
+                                        className="accent-blue-500"
+                                    />
+                                    <span>Longbridge (Account Required)</span>
+                                </label>
+                                <label className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="source"
+                                        value="yahoo"
+                                        checked={source === "yahoo"}
+                                        onChange={() => setSource("yahoo")}
+                                        className="accent-purple-500"
+                                    />
+                                    <span>Yahoo Finance (Free)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {source === "longbridge" && (
+                            <div className="text-sm">
+                                <span className="text-muted-foreground">Account: </span>
+                                <span className="font-bold">{selectedAccount ? selectedAccount.name : <span className="text-red-500">None Selected (Please select from list)</span>}</span>
+                            </div>
+                        )}
+
                         <div className="flex space-x-2">
-                            <Input value={testSymbol} onChange={(e) => setTestSymbol(e.target.value)} placeholder="Symbol (e.g. 700.HK)" />
-                            <Button onClick={runTestQuote} disabled={testing}>
+                            <Input value={testSymbol} onChange={(e) => setTestSymbol(e.target.value)} placeholder="Symbol (e.g. 700.HK, AAPL)" />
+                            <Button onClick={runTestQuote} disabled={testing || (source === 'longbridge' && !selectedAccount)}>
                                 {testing ? "Testing..." : "Run Test"}
                             </Button>
                         </div>

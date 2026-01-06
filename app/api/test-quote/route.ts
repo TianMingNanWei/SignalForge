@@ -1,16 +1,38 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { Config, QuoteContext } from "longport";
-
-// Prevent Longport from logging to console heavily if possible, or handle it?
-// The SDK might require specific env vars or config.
+import yahooFinance from 'yahoo-finance2';
 
 export async function POST(req: Request) {
     try {
-        const { accountId, type, symbol } = await req.json();
+        const body = await req.json();
+        const { accountId, type, symbol, source = 'longbridge' } = body;
 
-        if (!accountId || !type || !symbol) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        if (!symbol) {
+            return NextResponse.json({ error: "Missing symol" }, { status: 400 });
+        }
+
+        // Yahoo Finance Handler
+        if (source === 'yahoo') {
+            try {
+                const quote = await yahooFinance.quote(symbol);
+                return NextResponse.json({
+                    success: true,
+                    data: [quote], // Return as array to match Longbridge somewhat
+                    source: 'yahoo'
+                });
+            } catch (error: any) {
+                console.error("Yahoo Finance Error:", error);
+                return NextResponse.json({
+                    error: "Failed to fetch from Yahoo Finance",
+                    details: error.message
+                }, { status: 500 });
+            }
+        }
+
+        // Longbridge Handler
+        if (!accountId || !type) {
+            return NextResponse.json({ error: "Missing required fields for Longbridge" }, { status: 400 });
         }
 
         let account;
@@ -40,19 +62,14 @@ export async function POST(req: Request) {
         // Fetch Quote
         const quotes = await ctx.quote([symbol]);
 
-        // Close context (important to not leak connections)
-        // Note: SDK structure might differ, checking docs... usually close specific contexts or just let it be strictly scoped.
-        // JS SDK usually manages connection. Assuming stateless for this test or need to handle connection lifecycle.
-        // If SDK uses persistent connection, this might be slow on Edge/Serverless.
-        // Assuming we are in Node environment (default for Next.js API routes unless edge runtime specified).
-
         return NextResponse.json({
             success: true,
-            data: quotes
+            data: quotes,
+            source: 'longbridge'
         });
 
     } catch (error: any) {
-        console.error("Longport Test Error:", error);
+        console.error("Test Quote Error:", error);
         return NextResponse.json({
             error: error.message || "Failed to fetch quote",
             details: error.toString()
