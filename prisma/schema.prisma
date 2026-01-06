@@ -67,3 +67,29 @@ model Verification {
 
   @@map("verification")
 }
+
+model MessageAccount {
+  id          String    @id @default(cuid())
+  name        String
+  appKey      String
+  appSecret   String
+  accessToken String
+  expiry      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("message_account")
+}
+
+model TradingAccount {
+  id          String    @id @default(cuid())
+  name        String
+  appKey      String
+  appSecret   String
+  accessToken String
+  expiry      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("trading_account")
+}

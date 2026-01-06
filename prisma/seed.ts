@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Role } from '@prisma/client';
+// import { Role } from '@prisma/client';
 import { auth } from "../lib/auth"; // Import our auth instance
 import { prisma } from "../lib/prisma";
 
@@ -36,7 +36,7 @@ async function main() {
             if (res?.user) {
                 await prisma.user.update({
                     where: { id: res.user.id },
-                    data: { role: Role.ADMIN }
+                    data: { role: 'ADMIN' as any }
                 });
                 console.log('Super Admin user created and promoted.');
             } else {

@@ -14,7 +14,7 @@ import {
     SidebarProvider,
     SidebarTrigger
 } from "@/components/ui/sidebar";
-import { User, Users, LayoutDashboard, LogOut, Server } from "lucide-react";
+import { User, Users, LayoutDashboard, LogOut, Server, MessageSquare, CandlestickChart } from "lucide-react";
 import { SignOutButton } from "./sign-out-button"; // Separate client component for sign out
 import { ModeToggle } from "@/components/theme-toggle";
 
@@ -50,6 +50,14 @@ export default async function DashboardLayout({
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Management</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton asChild>
                                             <Link href="/dashboard/users">
@@ -71,6 +79,35 @@ export default async function DashboardLayout({
                                 </SidebarMenu>
                             </SidebarGroupContent>
                         </SidebarGroup>
+
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Longbridge Accounts</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild>
+                                            <Link href="/dashboard/accounts/message">
+                                                <div className="flex h-5 w-5 items-center justify-center rounded-md border border-border/50 bg-background/50">
+                                                    <MessageSquare className="h-3 w-3" />
+                                                </div>
+                                                <span>Message Accounts</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild>
+                                            <Link href="/dashboard/accounts/trading">
+                                                <div className="flex h-5 w-5 items-center justify-center rounded-md border border-border/50 bg-background/50">
+                                                    <CandlestickChart className="h-3 w-3" />
+                                                </div>
+                                                <span>Trading Accounts</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+
                         <SidebarGroup className="mt-auto">
                             <SidebarGroupContent>
                                 <SidebarMenu>
